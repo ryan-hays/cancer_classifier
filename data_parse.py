@@ -4,6 +4,7 @@ First, we want to extract the most mutated genes in the studies by their mutatio
 """
 import sys
 import os 
+import numpy as np
 
 def parse_mutation_file(file, gene_dict):
     t_barcode_index = file[0].index('Tumor_Sample_Barcode')
@@ -18,7 +19,7 @@ def parse_mutation_file(file, gene_dict):
                 gene_dict[i[0]] += 1
     return gene_dict
 
-def get_genes_for_cancer_type(files, k=100):
+def get_genes_for_cancer_type(files, k=10):
     """
     Parses each data file and returns k-most prevelant genes
     """
@@ -33,7 +34,8 @@ def get_genes_for_cancer_type(files, k=100):
             pass
     #Sort and extract top k
     sorted_genes = sorted(gene_dict.items(), key=lambda x: x[1], reverse = True)[:k]
-    return sorted_genes
+    gene_list = [gene[0] for gene in sorted_genes]
+    return gene_list
 
 
 def extract_data_files():
@@ -70,13 +72,59 @@ def gene_features():
         for gene in genes:
             if gene not in gene_features: #make sure gene hasn't already been selected in another type
                 gene_features.append(gene)
-    return gene_features, cancer_types_dict
+    return gene_features, cancer_type_dict
 
 def feature_build(gene_set, file_paths_by_cancer):
     #Build list of samples
-    sample_dict = {}
+    cancer_dict = {} #maps cancer to an index
+    cancer_index = 0
+    training_set = {}
+    training_set_targets = {}
+    #Intialize training set and training set targets with all zeros
+    for cancer in file_paths_by_cancer:
+        cancer_dict[cancer] = cancer_index
+        cancer_index += 1
+        list_of_files = file_paths_by_cancer[cancer]
+        for f in list_of_files:
+            try:
+                data = readdata(f)
+                t_barcode_index = data[0].index('Tumor_Sample_Barcode')
+                for i in data[1:]:
+                    if i[t_barcode_index] not in training_set: # and i[t_barcode_index] != 'Tumor_Sample_Barcode':
+                        sample_id = i[t_barcode_index]
+                        training_set[sample_id] = [0 for i in range(len(gene_set))]
+                        training_set_targets[sample_id] = cancer_dict[cancer]
+            except Exception as e:
+                print(e)
+                pass
+    #print("Here", training_set)
+    #Update when finding genes
     for cancer in file_paths_by_cancer:
         list_of_files = file_paths_by_cancer[cancer]
+        for f in list_of_files:
+            try:
+                data = readdata(f)
+                t_barcode_index = data[0].index('Tumor_Sample_Barcode')
+                for i in data[1:]:
+                    sample_id = i[t_barcode_index]
+                    gene = i[0]
+                    if gene in gene_set:
+                        training_set[sample_id][gene_set.index(gene)] = 1
+            except:
+                pass
+    #Concert to array 
+    #print(len(training_set))
+    print training_set
+    print training_set_targets
+    sample_list = training_set.keys()
+    training_set_final = [training_set[val] for val in sample_list]
+    training_set_targets_final = [training_set_targets[val] for val in sample_list]
+    np.save('v2_training_set.npy', np.array(training_set_final))
+    np.save('v2_training_set_targets.npy', np.array(training_set_targets_final))
+    #print(gene_set)
+
+
+
 
 
 if __name__ == "__main__":
