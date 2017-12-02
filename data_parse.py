@@ -60,7 +60,7 @@ def readdata(file):
     del data[0]
     return data
 
-def main():
+def gene_features():
     cancer_type_dict = extract_data_files()
     gene_features = []
     #Pull genes for each cancer type
@@ -70,12 +70,18 @@ def main():
         for gene in genes:
             if gene not in gene_features: #make sure gene hasn't already been selected in another type
                 gene_features.append(gene)
-    
+    return gene_features, cancer_types_dict
 
-# def get_web_data(cancer):
-#     #cancer_studies #Say that this is our list of cancer studies
-#     test = urllib2.urlopen("http://www.cbioportal.org/webservice.do?cmd=getCaseLists&cancer_study_id=%s") % (cancer)
-#     print (test.read())
+def feature_build(gene_set, file_paths_by_cancer):
+    #Build list of samples
+    sample_dict = {}
+    for cancer in file_paths_by_cancer:
+        list_of_files = file_paths_by_cancer[cancer]
+
 
 if __name__ == "__main__":
-    main()
+    genes, cancer_types_dict = gene_features() #select genes that we will use as gene features 
+    feature_build(gene_set=genes, file_paths_by_cancer=cancer_types_dict)#Now build feature vector for each sample in study 
+
+
+
