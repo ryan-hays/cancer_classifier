@@ -65,7 +65,16 @@ def readdata(file):
         line = line.rstrip()
         info = line.split("\t")
         data.append(info)
-    del data[0]
+    
+    start_i = None
+
+    for i in range(len(data)):
+        if data[i][0] == "Hugo_Symbol":
+            start_i = i
+            break
+    if start_i != None:
+        data = data[start_i:]
+
     return data
 
 def gene_features():
@@ -192,7 +201,7 @@ def feature_build(gene_set):
 
 def main():
     genes = gene_features() #select genes that we will use as gene features 
-    feature_build(gene_set=genes)#Now build feature vector for each sample in study 
+    # feature_build(gene_set=genes)#Now build feature vector for each sample in study 
 
 if __name__ == "__main__":
     main()
